@@ -1,6 +1,6 @@
-## VNpayment gateway for Botble CMS
+## VNPayment gateway for Botble CMS
 
-This  plugin allows you to integrate VNpayment payment gateway into Botble CMS.
+This  plugin allows you to integrate VNPayment payment gateway into Botble CMS.
 
 ## Installation
 
@@ -16,7 +16,7 @@ This plugin is released under the [MIT license](LICENSE).
 
 This plugin is developed by [Binjuhor](https://binjuhor.now.sh) from [XDevLavs Team](https://xdevlabs.com).
 
-Contact me at [binjuhor@gmail.com](mailto:binjuhor@gmail.com) for more information.
+Contact me at [kiemhd@outlook.com](mailto:kiemhd@outlook.com) for more information.
 
 ## Changelog
 
