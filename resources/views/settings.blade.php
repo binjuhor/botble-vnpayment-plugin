@@ -80,7 +80,7 @@
                         <div class="form-group mb-3">
                             <label class="text-title-field" for="payment_vnpay_secret">{{ trans('plugins/vnpay::vnpay.vnpay_secret') }}</label>
                             <div class="input-option">
-                                <input type="password" class="next-input" placeholder="••••••••" id="payment_vnpay_secret" name="payment_vnpay_secret" value="setting('payment_vnpay_secret') }}">
+                                <input type="password" class="next-input" placeholder="••••••••" id="payment_vnpay_secret" name="payment_vnpay_secret" value="{{ setting('payment_vnpay_secret') }}">
                             </div>
                         </div>
                         {!! Form::hidden('payment_vnpay_mode', 1) !!}
