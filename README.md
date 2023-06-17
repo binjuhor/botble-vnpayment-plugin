@@ -4,9 +4,12 @@ This  plugin allows you to integrate VNPayment payment gateway into Botble CMS.
 
 ## Installation
 
-- Download and extract plugin files to `platform/plugins/vnpay` folder.
+- Download and extract plugin files to `platform/plugins/vnpayment` folder.
+- Setup you website timezone to `Asia/Ho_Chi_Minh`.
 - Go to Admin Panel > Plugins, then activate VNpayment plugin.
 - Go to Admin Panel > Settings > Payment methods, then enter your VNpayment credentials.
+
+Note: this plugin is only available for currency `VND`.
 
 ## License
 
