@@ -1,0 +1,11 @@
+{
+    "id": "binjuhor/botble-vnpayment-plugin",
+    "name": "VNPay Payment Gateway for BotBle CMS",
+    "namespace": "Binjuhor\\VNPay\\",
+    "provider": "Binjuhor\\VNPay\\Providers\\VNPayServiceProvider",
+    "author": "Binjuhor from XDevLabs Team",
+    "url": "https://binjuhor.now.sh",
+    "version": "0.0.1",
+    "description": "VNPay payment gateway integration",
+    "require": ["payment"]
+}
