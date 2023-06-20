@@ -83,7 +83,6 @@
                                 <input type="password" class="next-input" placeholder="••••••••" id="payment_vnpay_secret" name="payment_vnpay_secret" value="{{ setting('payment_vnpay_secret') }}">
                             </div>
                         </div>
-                        {!! Form::hidden('payment_vnpay_mode', 1) !!}
                         {!! apply_filters(PAYMENT_METHOD_SETTINGS_CONTENT, null, 'vnpay') !!}
                     </div>
                 </div>
