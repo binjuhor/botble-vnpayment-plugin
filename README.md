@@ -17,7 +17,7 @@ This plugin is released under the [MIT license](LICENSE).
 
 ## About Author
 
-This plugin is developed by [Binjuhor](https://binjuhor.now.sh) from [XDevLavs Team](https://xdevlabs.com).
+This plugin is developed by [Binjuhor](https://binjuhor.now.sh) from [XDevLabs Team](https://xdevlabs.com).
 
 Contact me at [kiemhd@outlook.com](mailto:kiemhd@outlook.com) for more information.
 

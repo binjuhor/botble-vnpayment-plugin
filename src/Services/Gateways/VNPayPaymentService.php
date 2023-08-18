@@ -2,9 +2,13 @@
 
 namespace Binjuhor\VNPay\Services\Gateways;
 
+use Botble\Ecommerce\Enums\OrderStatusEnum;
 use Botble\Ecommerce\Models\Order;
 use Botble\Payment\Enums\PaymentStatusEnum;
+use Botble\Payment\Repositories\Interfaces\PaymentInterface;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Support\Arr;
 
 class VNPayPaymentService
 {
@@ -14,9 +18,10 @@ class VNPayPaymentService
         $vnp_HashSecret = setting('payment_vnpay_secret');
         $vnp_Url = setting('payment_vnpay_client_url');
         $vnp_Returnurl = route('payments.vnpay.callback');
-        $vnp_TxnRef = $data['orders'][0]->code;
-        $vnp_Amount = $data['amount'];
-        $vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
+
+        $vnp_TxnRef = $data['orders'][0]->code; //Mã giao dịch thanh toán tham chiếu của merchant
+        $vnp_Amount = $data['amount']; // Số tiền thanh toán
+        $vnp_IpAddr = $_SERVER['REMOTE_ADDR']; //IP Khách hàng thanh toán
 
         $date = Carbon::now()->setTimezone(config('app.timezone'));
 
@@ -65,7 +70,7 @@ class VNPayPaymentService
         return $vnp_Url;
     }
 
-    public function afterMakePayment(array $data): string|null
+    public function afterMakePayment(array $data): string
     {
         $chargeId = $data['vnp_TransactionNo'];
         $status = PaymentStatusEnum::FAILED;
@@ -123,8 +128,110 @@ class VNPayPaymentService
         return false;
     }
 
+    public function getToken(array $data)
+    {
+        $order = Order::where('code', $data['vnp_TxnRef'])->first();
+        return $order->token;
+    }
+
     public function supportedCurrencyCodes(): array
     {
         return ['VND'];
+    }
+
+    /**
+     * This function run on production for IPN
+     * Check more here: https://sandbox.vnpayment.vn/apis/docs/huong-dan-tich-hop/#code-ipn-url
+     *
+     * @param array $data
+     * @return array
+     */
+    public function storeData($data)
+    {
+        $vnp_HashSecret = setting('payment_vnpay_secret');
+        $inputData = array();
+        $returnData = array();
+
+        foreach ($_GET as $key => $value) {
+            if (str_starts_with($key, "vnp_")) {
+                $inputData[$key] = $value;
+            }
+        }
+
+        $vnp_SecureHash = $inputData['vnp_SecureHash'];
+        unset($inputData['vnp_SecureHash']);
+        ksort($inputData);
+        $i = 0;
+        $hashData = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+        $chargeId = $inputData['vnp_TransactionNo']; //Mã giao dịch tại VNPAY
+        $vnp_BankCode = $inputData['vnp_BankCode']; //Ngân hàng thanh toán
+        $vnp_Amount = $inputData['vnp_Amount']/100; // Số tiền thanh toán VNPAY phản hồi
+
+        $status = PaymentStatusEnum::PENDING; // Là trạng thái thanh toán của giao dịch chưa có IPN lưu tại hệ thống của merchant chiều khởi tạo URL thanh toán.
+        $orderId = $inputData['vnp_TxnRef'];
+
+
+        try {
+            //Kiểm tra checksum của dữ liệu
+            if ($secureHash == $vnp_SecureHash) {
+                $order = Order::where('code', $orderId)->first();
+                $customer = $order->user;
+
+                if ($order != NULL) {
+                    if($order->amount == $vnp_Amount) {
+                        if ($order->status !== NULL && $order->status == OrderStatusEnum::PENDING) {
+                            if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
+                                $status = PaymentStatusEnum::COMPLETED;
+                            } else {
+                                $status = PaymentStatusEnum::FAILED;
+                            }
+
+                            do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
+                                'amount' => $data['vnp_Amount'],
+                                'currency' => 'VND',
+                                'charge_id' => $chargeId,
+                                'order_id' => $order->id,
+                                'customer_id' => $customer->id,
+                                'customer_type' => get_class($customer),
+                                'payment_channel' => VNPAY_PAYMENT_METHOD_NAME,
+                                'status' => $status,
+                            ]);
+
+                            //Trả kết quả về cho VNPAY: Website/APP TMĐT ghi nhận yêu cầu thành công
+                            $returnData['RspCode'] = '00';
+                            $returnData['Message'] = 'Confirm Success';
+                        } else {
+                            $returnData['RspCode'] = '02';
+                            $returnData['Message'] = 'Order already confirmed';
+                        }
+                    }
+                    else {
+                        $returnData['RspCode'] = '04';
+                        $returnData['Message'] = 'invalid amount';
+                    }
+                } else {
+                    $returnData['RspCode'] = '01';
+                    $returnData['Message'] = 'Order not found';
+                }
+            } else {
+                $returnData['RspCode'] = '97';
+                $returnData['Message'] = 'Invalid signature';
+            }
+        } catch (Exception $e) {
+            $returnData['RspCode'] = '99';
+            $returnData['Message'] = 'Unknow error';
+        }
+
+        return $returnData;
     }
 }

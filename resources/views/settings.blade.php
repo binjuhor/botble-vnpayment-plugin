@@ -52,6 +52,9 @@
                                 <li style="list-style-type:decimal">
                                     <p>{{ trans('plugins/vnpay::vnpay.enter_client_id_and_secret') }}</p>
                                 </li>
+                                <li style="list-style-type:decimal">
+                                    <p>{!! trans('plugins/vnpay::vnpay.send_ipn_url_to_vnpay', ['url' => route('payments.vnpay.ipn')]) !!}</p>
+                                </li>
                             </ul>
                         </li>
                     </ul>
@@ -81,6 +84,15 @@
                             <label class="text-title-field" for="payment_vnpay_secret">{{ trans('plugins/vnpay::vnpay.vnpay_secret') }}</label>
                             <div class="input-option">
                                 <input type="password" class="next-input" placeholder="••••••••" id="payment_vnpay_secret" name="payment_vnpay_secret" value="{{ setting('payment_vnpay_secret') }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="text-title-field" for="payment_vnpay_mode">{{ trans('plugins/vnpay::vnpay.vnpay_mode') }}</label>
+                            <div class="input-option">
+                                <select name="payment_vnpay_mode" class="next-input">
+                                    <option {{ setting('payment_vnpay_mode') == 0 ? 'selected' : ''}} value="0">{{ __('No') }}</option>
+                                    <option {{ setting('payment_vnpay_mode') == 1 ? 'selected' : '' }} value="1">{{ __('Yes') }}</option>
+                                </select>
                             </div>
                         </div>
                         {!! apply_filters(PAYMENT_METHOD_SETTINGS_CONTENT, null, 'vnpay') !!}

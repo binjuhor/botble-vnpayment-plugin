@@ -15,6 +15,7 @@ class Plugin extends PluginOperationAbstract
                 'payment_vnpay_description',
                 'payment_vnpay_client_id',
                 'payment_vnpay_client_secret',
+                'payment_vnpay_mode',
                 'payment_vnpay_status',
             ])
             ->delete();
