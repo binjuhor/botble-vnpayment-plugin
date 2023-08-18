@@ -43,10 +43,10 @@ class VNPayController extends Controller
         VNPayPaymentIPNRequest $request,
         VNPayPaymentService $vnpayPaymentService
     ) {
-        if(setting('payment_vnpay_mode') == 0) {
+        if(setting('payment_vnpay_mode') == 0 || !$request->has('vnp_SecureHash')) {
             return response()->json([
-                'RspCode' => '00',
-                'Message' => 'Confirm Success'
+                'RspCode' => '99',
+                'Message' => 'Invalid Parameters or In development mode'
             ]);
         }
         return response()->json($vnpayPaymentService->storeData($request->input()));
