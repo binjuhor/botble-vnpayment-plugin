@@ -132,7 +132,7 @@ class VNPayPaymentService
 
     public function getToken(array $data)
     {
-        $order = Order::where('code', $data['vnp_TxnRef'])->first();
+        $order = Order::find($data['vnp_TxnRef']);
         return $order->token;
     }
 
