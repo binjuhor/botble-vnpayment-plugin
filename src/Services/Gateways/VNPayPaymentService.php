@@ -19,7 +19,7 @@ class VNPayPaymentService
         $vnp_Url = setting('payment_vnpay_client_url');
         $vnp_Returnurl = route('payments.vnpay.callback');
 
-        $vnp_TxnRef = $data['orders'][0]->code; //Mã giao dịch thanh toán tham chiếu của merchant
+        $vnp_TxnRef = $data['orders'][0]->id; //Mã giao dịch thanh toán tham chiếu của merchant
         $vnp_Amount = $data['amount']; // Số tiền thanh toán
         $vnp_IpAddr = $_SERVER['REMOTE_ADDR']; //IP Khách hàng thanh toán
 
@@ -66,7 +66,6 @@ class VNPayPaymentService
             $vnpSecureHash =   hash_hmac('sha512', $hashdata, $vnp_HashSecret);
             $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
         }
-
         return $vnp_Url;
     }
 
@@ -74,23 +73,26 @@ class VNPayPaymentService
     {
         $chargeId = $data['vnp_TransactionNo'];
         $status = PaymentStatusEnum::FAILED;
-        $order = Order::where('code', $data['vnp_TxnRef'])->first();
-        $customer = $order->user;
+        $order = Order::find($data['vnp_TxnRef']);
 
-        if ($this->getSecureHash() === $data['vnp_SecureHash']) {
-            $status = $data['vnp_ResponseCode'] === '00' ? PaymentStatusEnum::COMPLETED : PaymentStatusEnum::PENDING;
+        if($order !== NULL) {
+            $customer = $order->user;
+
+            if ($this->getSecureHash() === $data['vnp_SecureHash']) {
+                $status = $data['vnp_ResponseCode'] === '00' ? PaymentStatusEnum::COMPLETED : PaymentStatusEnum::PENDING;
+            }
+
+            do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
+                'amount' => $data['vnp_Amount'],
+                'currency' => 'VND',
+                'charge_id' => $chargeId,
+                'order_id' => $order->id,
+                'customer_id' => $customer->id,
+                'customer_type' => get_class($customer),
+                'payment_channel' => VNPAY_PAYMENT_METHOD_NAME,
+                'status' => $status,
+            ]);
         }
-
-        do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
-            'amount' => $data['vnp_Amount'],
-            'currency' => 'VND',
-            'charge_id' => $chargeId,
-            'order_id' => $order->id,
-            'customer_id' => $customer->id,
-            'customer_type' => get_class($customer),
-            'payment_channel' => VNPAY_PAYMENT_METHOD_NAME,
-            'status' => $status,
-        ]);
 
         return $chargeId;
     }
@@ -149,11 +151,12 @@ class VNPayPaymentService
     public function storeData($data)
     {
         $vnp_HashSecret = setting('payment_vnpay_secret');
+        $chargeId = $data['vnp_TransactionNo'];
         $inputData = array();
         $returnData = array();
 
         foreach ($_GET as $key => $value) {
-            if (str_starts_with($key, "vnp_")) {
+            if (substr($key, 0, 4) == "vnp_") {
                 $inputData[$key] = $value;
             }
         }
@@ -161,35 +164,26 @@ class VNPayPaymentService
         $vnp_SecureHash = $inputData['vnp_SecureHash'];
         unset($inputData['vnp_SecureHash']);
         ksort($inputData);
-        $i = 0;
-        $hashData = "";
-        foreach ($inputData as $key => $value) {
-            if ($i == 1) {
-                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
-            } else {
-                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
-                $i = 1;
-            }
-        }
-
+        $hashData = http_build_query($inputData);
         $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-        $chargeId = $inputData['vnp_TransactionNo']; //Mã giao dịch tại VNPAY
+        $vnpTranId = $inputData['vnp_TransactionNo']; //Mã giao dịch tại VNPAY
         $vnp_BankCode = $inputData['vnp_BankCode']; //Ngân hàng thanh toán
         $vnp_Amount = $inputData['vnp_Amount']/100; // Số tiền thanh toán VNPAY phản hồi
 
-        $status = PaymentStatusEnum::PENDING; // Là trạng thái thanh toán của giao dịch chưa có IPN lưu tại hệ thống của merchant chiều khởi tạo URL thanh toán.
+        $status = new PaymentStatusEnum; // Là trạng thái thanh toán của giao dịch chưa có IPN lưu tại hệ thống của merchant chiều khởi tạo URL thanh toán.
         $orderId = $inputData['vnp_TxnRef'];
-
 
         try {
             //Kiểm tra checksum của dữ liệu
             if ($secureHash == $vnp_SecureHash) {
-                $order = Order::where('code', $orderId)->first();
-                $customer = $order->user;
+                $order = Order::find($orderId);
 
                 if ($order != NULL) {
                     if($order->amount == $vnp_Amount) {
-                        if ($order->status !== NULL && $order->status == OrderStatusEnum::PENDING) {
+                        $customer = $order->user;
+
+
+                        if ($order->status !== NULL && $order->payment->status == $status) {
                             if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
                                 $status = PaymentStatusEnum::COMPLETED;
                             } else {

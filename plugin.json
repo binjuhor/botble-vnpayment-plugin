@@ -4,8 +4,8 @@
     "namespace": "Binjuhor\\VNPay\\",
     "provider": "Binjuhor\\VNPay\\Providers\\VNPayServiceProvider",
     "author": "Binjuhor from XDevLabs Team",
-    "url": "https://binjuhor.now.sh",
-    "version": "0.0.1",
+    "url": "https://binjuhor.com",
+    "version": "0.1.0",
     "description": "VNPay payment gateway integration",
     "require": ["payment"]
 }

@@ -11,6 +11,14 @@ use Illuminate\Routing\Controller;
 
 class VNPayController extends Controller
 {
+    /**
+     * Get callback from VNPay
+     *
+     * @param VNPayPaymentCallbackRequest $request
+     * @param VNPayPaymentService $vnpayPaymentService
+     * @param BaseHttpResponse $response
+     * @return void
+     */
     public function getCallback(
         VNPayPaymentCallbackRequest $request,
         VNPayPaymentService $vnpayPaymentService,
@@ -39,16 +47,25 @@ class VNPayController extends Controller
             ->setNextUrl(PaymentHelper::getRedirectURL($token))
             ->setMessage(__('Checkout successfully!'));
     }
+
+    /**
+     * Get IPN from VNPay
+     *
+     * @param VNPayPaymentIPNRequest $request
+     * @param VNPayPaymentService $vnpayPaymentService
+     * @return void
+     */
     public function getIPN(
         VNPayPaymentIPNRequest $request,
         VNPayPaymentService $vnpayPaymentService
     ) {
-        if(!$request->has('vnp_SecureHash')) {
-            return response()->json([
-                'RspCode' => '99',
-                'Message' => 'Invalid Parameters'
-            ]);
+        if($request->has('vnp_SecureHash')) {
+            return response()->json($vnpayPaymentService->storeData($request->input()));
         }
-        return response()->json($vnpayPaymentService->storeData($request->input()));
+
+        return response()->json([
+            'RspCode' => '99',
+            'Message' => 'Invalid Parameters'
+        ]);
     }
 }

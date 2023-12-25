@@ -1,5 +1,5 @@
 {
-    "name": "binjuhor/botble-vnpayment-plugin",
+    "name": "binjuhor/vnpay",
     "description": "VNPay Payment Gateway",
     "type": "package"
 }
