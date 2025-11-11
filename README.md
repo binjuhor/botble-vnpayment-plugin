@@ -19,7 +19,7 @@ This plugin is released under the [MIT license](LICENSE).
 
 This plugin is developed by [Binjuhor](https://binjuhor.com) from [XDevLabs Team](https://xdevlabs.com).
 
-Contact me at [hi@bịnuhor.com](mailto:hi@bịnuhor.com) for more information.
+Contact me at [hi@binjuhor.com](mailto:hi@binuhor.com) for more information.
 
 ## Changelog
 
